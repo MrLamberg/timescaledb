@@ -150,7 +150,8 @@ validate_drop_chunks_hypertable(Cache *hcache, Oid user_htoid)
 Datum
 policy_retention_add_internal(Oid ht_oid, Oid window_type, Datum window_datum,
 							  Interval default_schedule_interval, bool if_not_exists,
-							  bool fixed_schedule, TimestampTz initial_start, const char *timezone)
+							  bool fixed_schedule, TimestampTz initial_start, const char *timezone,
+							  RetentionPolicy retention_strategy)
 {
 	NameData application_name;
 	int32 job_id;
@@ -267,6 +268,8 @@ policy_retention_add_internal(Oid ht_oid, Oid window_type, Datum window_datum,
 							format_type_be(window_type))));
 	}
 
+	ts_jsonb_add_str(parse_state, POL_RETENTION_CONF_KEY_RET_STRATEGY, retention_strategy);
+
 	JsonbValue *result = pushJsonbValue(&parse_state, WJB_END_OBJECT, NULL);
 	Jsonb *config = JsonbValueToJsonb(result);
 
@@ -318,6 +321,8 @@ policy_retention_add(PG_FUNCTION_ARGS)
 	bool fixed_schedule = !PG_ARGISNULL(4);
 	text *timezone = PG_ARGISNULL(5) ? NULL : PG_GETARG_TEXT_PP(5);
 	char *valid_timezone = NULL;
+	text retention_strategy_str = PG_ARGISNULL(6) ? "CURRENT_TIME" : PG_GETARG_TEXT_PP(6);
+	RetentionStrategy retention_strategy = get_retention_strategy(retention_strategy_str);
 
 	TS_PREVENT_FUNC_IF_READ_ONLY();
 
@@ -340,7 +345,8 @@ policy_retention_add(PG_FUNCTION_ARGS)
 										   if_not_exists,
 										   fixed_schedule,
 										   initial_start,
-										   valid_timezone);
+										   valid_timezone,
+										   retention_strategy);
 	if (!TIMESTAMP_NOT_FINITE(initial_start))
 	{
 		int32 job_id = DatumGetInt32(retval);
@@ -417,4 +423,16 @@ policy_retention_remove(PG_FUNCTION_ARGS)
 	TS_PREVENT_FUNC_IF_READ_ONLY();
 
 	return policy_retention_remove_internal(table_oid, if_exists);
+}
+
+RetentionStrategy
+get_retention_strategy(const text *retention_strategy_str) {
+	switch (retention_strategy_str) {
+		case "CURRENT_TIME":
+			return CURRENT_TIME;
+		case "MAX_TIME":
+			return MAX_TIME;
+		default:
+			elog(ERROR, "Unknown retention strategy %d", retention_strategy_str);
+	}
 }

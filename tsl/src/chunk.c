@@ -308,7 +308,7 @@ chunk_set_default_data_node(PG_FUNCTION_ARGS)
  * Returns the number of dropped chunks.
  */
 int
-chunk_invoke_drop_chunks(Oid relid, Datum older_than, Datum older_than_type)
+chunk_invoke_drop_chunks(Oid relid, Datum older_than, Datum older_than_type, RetentionPolicy retention_policy)
 {
 	EState *estate;
 	ExprContext *econtext;

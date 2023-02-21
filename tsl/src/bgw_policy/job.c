@@ -281,7 +281,8 @@ policy_retention_execute(int32 job_id, Jsonb *config)
 
 	chunk_invoke_drop_chunks(policy_data.object_relid,
 							 policy_data.boundary,
-							 policy_data.boundary_type);
+							 policy_data.boundary_type,
+							 policy_data.retention_policy);
 
 	return true;
 }

@@ -29,6 +29,7 @@ typedef struct PolicyRetentionData
 	Oid object_relid;
 	Datum boundary;
 	Datum boundary_type;
+	RetentionPolicy retention_policy
 } PolicyRetentionData;
 
 typedef struct PolicyContinuousAggData
@@ -47,6 +48,12 @@ typedef struct PolicyCompressionData
 /* Reorder function type. Necessary for testing */
 typedef void (*reorder_func)(Oid tableOid, Oid indexOid, bool verbose, Oid wait_id,
 							 Oid destination_tablespace, Oid index_tablespace);
+
+typedef enum RetentionPolicy
+{
+	CURRENT_TIME,
+	MAX_TIME
+} RetentionPolicy;
 
 /* Functions exposed only for testing */
 extern bool policy_reorder_execute(int32 job_id, Jsonb *config);
